@@ -233,7 +233,9 @@ function App() {
           const merged = filtered[i] * 2;
           result.push(merged);
           newScore += merged;
-          if (merged === 2048) setWon(true);
+          if (merged === 2048) {
+            setWon(true);
+          }
           i += 2;
           moved = true;
         } else {
@@ -283,15 +285,20 @@ function App() {
       setScore(newScore);
       setMoveCount(prev => prev + 1);
       
+      // Save best score but DON'T show modal yet
       if (newScore > bestScore) {
         setBestScore(newScore);
         localStorage.setItem('best2048', newScore.toString());
         setNewHighScore(newScore);
-        setShowNFTModal(true);
       }
       
+      // Check if game is over
       if (isGameOver(newGrid)) {
         setGameOver(true);
+        // Show NFT modal only when game ends with new high score
+        if (newScore > bestScore) {
+          setTimeout(() => setShowNFTModal(true), 500);
+        }
       }
     }
   }, [grid, score, bestScore, gameOver, won, gameId, moveCount]);
