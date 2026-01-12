@@ -113,6 +113,17 @@ function App() {
     setWalletAddress('');
   };
 
+  const endGame = () => {
+    setGameOver(true);
+    // Check if current score beats best score
+    if (score > bestScore) {
+      setBestScore(score);
+      localStorage.setItem('best2048', score.toString());
+      setNewHighScore(score);
+      setTimeout(() => setShowNFTModal(true), 500);
+    }
+  };
+
   const mintHighScoreNFT = async () => {
     if (!walletAddress) {
       alert('Please connect your wallet to mint your High Score NFT!');
@@ -470,12 +481,21 @@ function App() {
               <div className="text-white text-2xl font-bold">{moveCount}</div>
             </div>
           </div>
-          <button
-            onClick={restart}
-            className="bg-gray-700 hover:bg-gray-800 text-white px-6 py-3 rounded-lg font-bold transition"
-          >
-            New Game
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={endGame}
+              disabled={gameOver}
+              className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              End Game
+            </button>
+            <button
+              onClick={restart}
+              className="bg-gray-700 hover:bg-gray-800 text-white px-6 py-3 rounded-lg font-bold transition"
+            >
+              New Game
+            </button>
+          </div>
         </div>
 
         <div className="bg-purple-200 p-4 rounded-xl mb-4 relative max-w-2xl mx-auto">
@@ -510,7 +530,7 @@ function App() {
         </div>
 
         <div className="text-center text-gray-600 text-sm max-w-2xl mx-auto">
-          Use arrow keys to move tiles. Every move is recorded on Tempo Testnet!
+          Use arrow keys to move tiles. Click "End Game" anytime to finish and mint NFT if you beat your high score!
         </div>
         
         <div className="text-center mt-6 text-gray-500 text-xs">
