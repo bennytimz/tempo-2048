@@ -14,7 +14,8 @@ function App() {
   const [showNFTModal, setShowNFTModal] = useState(false);
   const [isMintingNFT, setIsMintingNFT] = useState(false);
   const [mintedNFTs, setMintedNFTs] = useState([]);
-  const [newHighScore, setNewHighScore] = useState(0);
+  const [finalScore, setFinalScore] = useState(0);
+  const [isNewHighScore, setIsNewHighScore] = useState(false);
 
   const BACKEND_WALLET = '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb';
   
@@ -115,18 +116,25 @@ function App() {
 
   const endGame = () => {
     setGameOver(true);
-    // Check if current score beats best score
-    if (score > bestScore) {
+    setFinalScore(score);
+    
+    // Check if it's a new high score
+    const isNewHigh = score > bestScore;
+    setIsNewHighScore(isNewHigh);
+    
+    // Update best score if needed
+    if (isNewHigh) {
       setBestScore(score);
       localStorage.setItem('best2048', score.toString());
-      setNewHighScore(score);
-      setTimeout(() => setShowNFTModal(true), 500);
     }
+    
+    // ALWAYS show NFT modal when game ends
+    setTimeout(() => setShowNFTModal(true), 500);
   };
 
-  const mintHighScoreNFT = async () => {
+  const mintGameNFT = async () => {
     if (!walletAddress) {
-      alert('Please connect your wallet to mint your High Score NFT!');
+      alert('Please connect your wallet to mint your Game NFT!');
       return;
     }
 
@@ -134,21 +142,27 @@ function App() {
       setIsMintingNFT(true);
 
       const nftMetadata = {
-        name: `2048 High Score: ${newHighScore}`,
-        description: `Achievement unlocked on Tempo Testnet! Reached a high score of ${newHighScore} in the fully on-chain 2048 game. Every move was recorded as a transaction on Tempo - the blockchain designed for payments, powered by Stripe and Paradigm.`,
+        name: isNewHighScore ? `2048 High Score: ${finalScore}` : `2048 Game Score: ${finalScore}`,
+        description: isNewHighScore 
+          ? `New High Score Achievement! Reached a high score of ${finalScore} in the fully on-chain 2048 game on Tempo Testnet. Every move was recorded as a transaction on Tempo - the blockchain designed for payments, powered by Stripe and Paradigm.`
+          : `Game Completed on Tempo Testnet! Scored ${finalScore} points with ${moveCount} moves. All gameplay recorded on-chain on Tempo - the blockchain for payments.`,
         image: `https://tempo.xyz/og.png`,
         external_url: 'https://tempo.xyz',
         attributes: [
           {
-            trait_type: 'High Score',
-            value: newHighScore
+            trait_type: 'Score',
+            value: finalScore
           },
           {
             trait_type: 'Total Moves',
             value: moveCount
           },
           {
-            trait_type: 'Achievement Date',
+            trait_type: 'Achievement Type',
+            value: isNewHighScore ? 'High Score' : 'Game Completion'
+          },
+          {
+            trait_type: 'Game Date',
             value: new Date().toLocaleDateString()
           },
           {
@@ -177,7 +191,7 @@ function App() {
       localStorage.setItem('minted2048NFTs', JSON.stringify(updatedNFTs));
 
       setShowNFTModal(false);
-      alert(`🎉 NFT Minted Successfully on Tempo!\n\nToken ID: #${nftTokenId}\nHigh Score: ${newHighScore}\n\nCheck your wallet!`);
+      alert(`🎉 NFT Minted Successfully on Tempo!\n\nToken ID: #${nftTokenId}\nScore: ${finalScore}\nType: ${isNewHighScore ? 'High Score Achievement' : 'Game Completion'}\n\nCheck your wallet!`);
     } catch (error) {
       console.error('NFT minting failed:', error);
       alert('Failed to mint NFT. Please try again.');
@@ -296,20 +310,19 @@ function App() {
       setScore(newScore);
       setMoveCount(prev => prev + 1);
       
-      // Save best score but DON'T show modal yet
+      // Update best score in real-time
       if (newScore > bestScore) {
         setBestScore(newScore);
         localStorage.setItem('best2048', newScore.toString());
-        setNewHighScore(newScore);
       }
       
-      // Check if game is over
+      // Check if game is over naturally
       if (isGameOver(newGrid)) {
         setGameOver(true);
-        // Show NFT modal only when game ends with new high score
-        if (newScore > bestScore) {
-          setTimeout(() => setShowNFTModal(true), 500);
-        }
+        setFinalScore(newScore);
+        const isNewHigh = newScore > bestScore;
+        setIsNewHighScore(isNewHigh);
+        setTimeout(() => setShowNFTModal(true), 500);
       }
     }
   }, [grid, score, bestScore, gameOver, won, gameId, moveCount]);
@@ -380,16 +393,21 @@ function App() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl">
             <div className="text-center">
-              <div className="text-6xl mb-4">🏆</div>
-              <h2 className="text-3xl font-bold text-gray-800 mb-2">New High Score!</h2>
-              <p className="text-5xl font-bold text-purple-600 mb-4">{newHighScore}</p>
+              <div className="text-6xl mb-4">{isNewHighScore ? '🏆' : '🎮'}</div>
+              <h2 className="text-3xl font-bold text-gray-800 mb-2">
+                {isNewHighScore ? 'New High Score!' : 'Game Complete!'}
+              </h2>
+              <p className="text-5xl font-bold text-purple-600 mb-4">{finalScore}</p>
               <p className="text-gray-600 mb-6">
-                You beat your previous best! Mint an NFT to commemorate this achievement on Tempo Testnet.
+                {isNewHighScore 
+                  ? 'Congratulations! You beat your previous best! Mint an NFT to commemorate this achievement on Tempo Testnet.'
+                  : `Great game! You scored ${finalScore} points. Mint an NFT to record this game on Tempo Testnet and increase your on-chain activity!`
+                }
               </p>
               
               {!walletAddress ? (
                 <div className="space-y-4">
-                  <p className="text-orange-600 font-semibold">Connect your wallet to mint your achievement NFT!</p>
+                  <p className="text-orange-600 font-semibold">Connect your wallet to mint your game NFT!</p>
                   <button
                     onClick={connectWallet}
                     className="w-full bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-bold transition"
@@ -399,11 +417,11 @@ function App() {
                 </div>
               ) : (
                 <button
-                  onClick={mintHighScoreNFT}
+                  onClick={mintGameNFT}
                   disabled={isMintingNFT}
                   className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-4 rounded-lg font-bold transition disabled:opacity-50"
                 >
-                  {isMintingNFT ? 'Minting...' : '🎨 Mint High Score NFT'}
+                  {isMintingNFT ? 'Minting...' : '🎨 Mint Game NFT'}
                 </button>
               )}
               
@@ -416,7 +434,7 @@ function App() {
               
               {mintedNFTs.length > 0 && (
                 <p className="text-sm text-gray-500 mt-4">
-                  You've minted {mintedNFTs.length} achievement NFT{mintedNFTs.length > 1 ? 's' : ''}
+                  You've minted {mintedNFTs.length} NFT{mintedNFTs.length > 1 ? 's' : ''} • Building your Tempo footprint!
                 </p>
               )}
             </div>
@@ -460,7 +478,7 @@ function App() {
           {mintedNFTs.length > 0 && (
             <div className="mt-3 bg-purple-100 border border-purple-400 rounded-lg p-3 inline-block">
               <p className="text-purple-800 font-medium">
-                🎨 {mintedNFTs.length} Achievement NFT{mintedNFTs.length > 1 ? 's' : ''} Minted
+                🎨 {mintedNFTs.length} NFT{mintedNFTs.length > 1 ? 's' : ''} Minted • Growing your Tempo footprint!
               </p>
             </div>
           )}
@@ -505,7 +523,7 @@ function App() {
                 {won ? 'You Win!' : 'Game Over!'}
               </div>
               <div className="text-gray-600 mb-4">
-                {moveCount} moves • {transactionHistory.length} transactions
+                Final Score: {score} • {moveCount} moves • {transactionHistory.length} transactions
               </div>
               <button
                 onClick={restart}
@@ -530,7 +548,7 @@ function App() {
         </div>
 
         <div className="text-center text-gray-600 text-sm max-w-2xl mx-auto">
-          Use arrow keys to move tiles. Click "End Game" anytime to finish and mint NFT if you beat your high score!
+          Use arrow keys to move tiles. Click "End Game" anytime to mint an NFT and build your Tempo testnet footprint!
         </div>
         
         <div className="text-center mt-6 text-gray-500 text-xs">
