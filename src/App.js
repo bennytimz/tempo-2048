@@ -24,8 +24,8 @@ function App() {
     chainId: TEMPO_TESTNET_CHAIN_ID,
     chainName: 'Tempo Testnet (Andantino)',
     nativeCurrency: {
-      name: 'USD',
-      symbol: 'USD',
+      name: 'AlphaUSD',
+      symbol: 'AlphaUSD',
       decimals: 18
     },
     rpcUrls: ['https://rpc.testnet.tempo.xyz'],
@@ -118,17 +118,14 @@ function App() {
     setGameOver(true);
     setFinalScore(score);
     
-    // Check if it's a new high score
     const isNewHigh = score > bestScore;
     setIsNewHighScore(isNewHigh);
     
-    // Update best score if needed
     if (isNewHigh) {
       setBestScore(score);
       localStorage.setItem('best2048', score.toString());
     }
     
-    // ALWAYS show NFT modal when game ends
     setTimeout(() => setShowNFTModal(true), 500);
   };
 
@@ -168,6 +165,10 @@ function App() {
           {
             trait_type: 'Network',
             value: 'Tempo Testnet'
+          },
+          {
+            trait_type: 'Gas Token',
+            value: 'AlphaUSD'
           }
         ]
       };
@@ -233,7 +234,7 @@ function App() {
     const transaction = {
       hash: txHash,
       blockNumber: 5234567 + moveCount,
-      gasCost: '0.00001 USD',
+      gasCost: '0.00001 AlphaUSD',
       timestamp: new Date().toLocaleTimeString(),
       data: moveData
     };
@@ -310,13 +311,11 @@ function App() {
       setScore(newScore);
       setMoveCount(prev => prev + 1);
       
-      // Update best score in real-time
       if (newScore > bestScore) {
         setBestScore(newScore);
         localStorage.setItem('best2048', newScore.toString());
       }
       
-      // Check if game is over naturally
       if (isGameOver(newGrid)) {
         setGameOver(true);
         setFinalScore(newScore);
